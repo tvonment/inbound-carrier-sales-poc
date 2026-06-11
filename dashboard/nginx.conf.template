@@ -9,6 +9,8 @@ server {
         proxy_pass ${API_URL};
         proxy_set_header X-API-Key "${API_KEY}";
         proxy_set_header Host $proxy_host;
+        # Upstream may be an https:// Container Apps FQDN
+        proxy_ssl_server_name on;
     }
 
     location / {
