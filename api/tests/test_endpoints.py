@@ -1,0 +1,191 @@
+"""Endpoint smoke tests against the seeded test database.
+
+Seed facts used here: L-1001 (Chicago Dry Van, $2150), L-2001 (Dallas Dry
+Van), Chicago has 5+ unbooked Dry Van loads. Mock FMCSA: *999 = not
+authorized, *000 = inactive, anything else eligible.
+"""
+
+
+# --- auth ---
+
+def test_healthz_needs_no_key(anon_client):
+    assert anon_client.get("/healthz").status_code == 200
+
+
+def test_endpoints_reject_missing_key(anon_client):
+    resp = anon_client.get("/api/loads/search", params={"origin": "Chicago"})
+    assert resp.status_code == 401
+
+
+def test_endpoints_reject_wrong_key(client):
+    resp = client.get(
+        "/api/loads/search", params={"origin": "Chicago"},
+        headers={"X-API-Key": "wrong"},
+    )
+    assert resp.status_code == 401
+
+
+# --- verify-mc ---
+
+def test_verify_mc_eligible(client):
+    resp = client.post("/api/verify-mc", json={"mc_number": "MC-123456"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["eligible"] is True
+    assert body["mc_number"] == "123456"
+    assert body["carrier_name"]
+
+
+def test_verify_mc_not_authorized(client):
+    body = client.post("/api/verify-mc", json={"mc_number": "111999"}).json()
+    assert body["eligible"] is False
+    assert body["status"] == "NOT_AUTHORIZED"
+
+
+def test_verify_mc_invalid_input(client):
+    body = client.post("/api/verify-mc", json={"mc_number": "abc"}).json()
+    assert body["eligible"] is False
+
+
+# --- load search ---
+
+def test_search_chicago_dry_van(client):
+    resp = client.get(
+        "/api/loads/search",
+        params={"origin": "Chicago", "equipment_type": "Dry Van"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert 1 <= body["count"] <= 3
+    for load in body["results"]:
+        assert "Chicago" in load["origin"]
+        assert load["equipment_type"] == "Dry Van"
+
+
+def test_search_is_case_insensitive_and_fuzzy(client):
+    body = client.get("/api/loads/search", params={"origin": "chicago, il"}).json()
+    assert body["count"] >= 1
+
+
+def test_search_unknown_city_returns_empty(client):
+    body = client.get("/api/loads/search", params={"origin": "Zurich"}).json()
+    assert body["count"] == 0
+    assert body["results"] == []
+
+
+# --- evaluate-offer ---
+
+def test_evaluate_offer_accept(client):
+    resp = client.post(
+        "/api/evaluate-offer",
+        json={"load_id": "L-1001", "offer_amount": 2000, "round_number": 1},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["decision"] == "accept"
+
+
+def test_evaluate_offer_counter(client):
+    body = client.post(
+        "/api/evaluate-offer",
+        json={"load_id": "L-1001", "offer_amount": 2600, "round_number": 1},
+    ).json()
+    assert body["decision"] == "counter"
+    assert body["counter_amount"] <= 2150 * 1.12
+    assert body["max_rounds"] == 3
+
+
+def test_evaluate_offer_reject_in_final_round(client):
+    body = client.post(
+        "/api/evaluate-offer",
+        json={"load_id": "L-1001", "offer_amount": 2600, "round_number": 3},
+    ).json()
+    assert body["decision"] == "reject"
+
+
+def test_evaluate_offer_unknown_load(client):
+    resp = client.post(
+        "/api/evaluate-offer",
+        json={"load_id": "L-9999", "offer_amount": 2000, "round_number": 1},
+    )
+    assert resp.status_code == 404
+
+
+# --- book ---
+
+def test_book_load_and_conflict_on_rebook(client):
+    resp = client.post(
+        "/api/book",
+        json={"load_id": "L-2001", "mc_number": "123456", "agreed_rate": 2050},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["confirmation_id"].startswith("ACME-")
+    assert body["agreed_rate"] == 2050
+
+    again = client.post(
+        "/api/book",
+        json={"load_id": "L-2001", "mc_number": "234567", "agreed_rate": 2100},
+    )
+    assert again.status_code == 409
+
+
+def test_booked_load_excluded_from_search(client):
+    body = client.get("/api/loads/search", params={"origin": "Dallas"}).json()
+    assert all(load["load_id"] != "L-2001" for load in body["results"])
+
+
+def test_evaluate_offer_on_booked_load_conflicts(client):
+    resp = client.post(
+        "/api/evaluate-offer",
+        json={"load_id": "L-2001", "offer_amount": 2000, "round_number": 1},
+    )
+    assert resp.status_code == 409
+
+
+# --- calls + metrics ---
+
+def test_record_booked_call(client):
+    resp = client.post(
+        "/api/calls",
+        json={
+            "outcome": "booked",
+            "mc_number": "MC-123456",
+            "load_id": "L-1001",
+            "sentiment": "positive",
+            "negotiation_rounds": 2,
+            "initial_offer": 2600,
+            "final_rate": 2300,
+            "transcript": "carrier: ... agent: ...",
+            "extracted": {"agreed": True},
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["mc_number"] == "123456"
+    assert body["loadboard_rate"] == 2150  # denormalized from the load
+
+
+def test_record_abandoned_call_with_minimal_payload(client):
+    resp = client.post("/api/calls", json={"outcome": "abandoned"})
+    assert resp.status_code == 201
+
+
+def test_record_call_rejects_unknown_outcome(client):
+    resp = client.post("/api/calls", json={"outcome": "exploded"})
+    assert resp.status_code == 422
+
+
+def test_list_calls(client):
+    body = client.get("/api/calls").json()
+    assert len(body) >= 2
+
+
+def test_metrics(client):
+    body = client.get("/api/metrics").json()
+    assert body["total_calls"] == 2
+    assert body["booked_count"] == 1
+    assert body["conversion_rate"] == 0.5
+    assert body["outcome_distribution"] == {"booked": 1, "abandoned": 1}
+    assert body["sentiment_distribution"] == {"positive": 1}
+    assert body["avg_rate_delta"] == 2300 - 2150
+    assert len(body["recent_calls"]) == 2
