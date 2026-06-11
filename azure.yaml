@@ -10,9 +10,11 @@ services:
     language: py
     docker:
       path: Dockerfile
+      remoteBuild: true
   dashboard:
     project: ./dashboard
     host: containerapp
     language: js
     docker:
       path: Dockerfile
+      remoteBuild: true

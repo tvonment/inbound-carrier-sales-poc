@@ -83,8 +83,9 @@ docker build -t acme-dash ./dashboard && \
 
 ## Deploy to Azure
 
-Prerequisites: [azd](https://aka.ms/azd), Azure CLI, Docker, an Azure
-subscription.
+Prerequisites: [azd](https://aka.ms/azd), Azure CLI, an Azure subscription.
+Docker is NOT required: images are built remotely by ACR
+(`remoteBuild: true` in `azure.yaml`).
 
 ```bash
 azd auth login
