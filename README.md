@@ -26,9 +26,10 @@ Azure Container Apps
 Azure Database for PostgreSQL Flexible Server (B1ms)
 ```
 
-- **APIM Consumption** fronts everything with subscription-key auth and rate
-  limiting; the FastAPI app additionally validates its own `X-API-Key` header
-  (defense in depth — the Container App FQDN is also reachable directly).
+- **APIM Consumption** fronts everything with subscription-key auth (the
+  Consumption sku has no rate-limit policy support); the FastAPI app
+  additionally validates its own `X-API-Key` header (defense in depth — the
+  Container App FQDN is also reachable directly).
 - **Negotiation is backend logic**, not prompt logic: `/api/evaluate-offer`
   accepts an offer up to `loadboard_rate × (1 + threshold)` with thresholds
   shrinking per round (12% / 8% / 4%, configurable via

@@ -273,7 +273,6 @@ resource apimApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-05-01
 <policies>
   <inbound>
     <base />
-    <rate-limit-by-key calls="100" renewal-period="60" counter-key="@(context.Subscription?.Key ?? context.Request.IpAddress)" />
     <set-header name="X-API-Key" exists-action="override">
       <value>{{backend-api-key}}</value>
     </set-header>

@@ -66,8 +66,8 @@ spreadsheet exports.
 The solution runs on Microsoft Azure in containers, with your load data in a
 managed PostgreSQL database. Everything is HTTPS. Every API call — including
 the voice platform's — must present a valid API key, enforced at two
-layers (the API gateway and the application itself), with rate limiting at
-the gateway. Secrets live in Azure's secret store, never in code.
+layers (the API gateway and the application itself). Secrets live in
+Azure's secret store, never in code.
 
 The entire environment is defined as code: one command (`azd up`) recreates
 it from scratch, and every change pushed to the code repository deploys
