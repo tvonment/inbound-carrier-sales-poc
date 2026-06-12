@@ -1,40 +1,58 @@
+import {
+  faArrowTrendDown,
+  faArrowTrendUp,
+  faInbox,
+  faMoneyBillTrendUp,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { fmtPct, fmtUsd, type Metrics } from "../api";
+import { Card, EmptyState } from "./Card";
 
 /** The margin story: what we agree to pay vs what the load was listed at. */
 export function RateCard({ metrics }: { metrics: Metrics }) {
   const delta = metrics.avg_rate_delta;
-  const sign = delta != null && delta > 0 ? "+" : "";
+  const overListed = delta != null && delta > 0;
+  const sign = overListed ? "+" : "";
 
   return (
-    <div className="card chart-card">
-      <h2>Agreed vs listed rate</h2>
+    <Card title="Agreed vs listed rate" icon={faMoneyBillTrendUp} className="min-h-[290px]">
       {delta == null ? (
-        <p className="empty">No booked loads yet</p>
+        <EmptyState icon={faInbox}>No booked loads yet</EmptyState>
       ) : (
-        <div className="rate-body">
-          <div className="rate-delta">
-            <span className={`rate-delta-value ${delta > 0 ? "neg" : "pos"}`}>
+        <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-0.5 py-2.5">
+            <span
+              className={`flex items-center gap-2 text-3xl font-bold tracking-tight ${
+                overListed ? "text-red-600" : "text-green-600"
+              }`}
+            >
+              <FontAwesomeIcon
+                icon={overListed ? faArrowTrendUp : faArrowTrendDown}
+                className="text-xl"
+              />
               {sign}
               {fmtUsd(delta)}
             </span>
-            <span className="rate-delta-pct">
+            <span className="text-sm text-slate-500">
               {sign}
               {fmtPct(metrics.avg_rate_delta_pct, 1)} vs loadboard
             </span>
           </div>
-          <dl className="rate-rows">
-            <div>
-              <dt>Avg agreed rate</dt>
-              <dd>{fmtUsd(metrics.avg_final_rate)}</dd>
+          <dl className="flex flex-col gap-1.5">
+            <div className="flex justify-between">
+              <dt className="text-sm text-slate-500">Avg agreed rate</dt>
+              <dd className="text-sm font-semibold">{fmtUsd(metrics.avg_final_rate)}</dd>
             </div>
-            <div>
-              <dt>Avg loadboard rate</dt>
-              <dd>{fmtUsd(metrics.avg_loadboard_rate)}</dd>
+            <div className="flex justify-between">
+              <dt className="text-sm text-slate-500">Avg loadboard rate</dt>
+              <dd className="text-sm font-semibold">{fmtUsd(metrics.avg_loadboard_rate)}</dd>
             </div>
           </dl>
-          <p className="rate-note">Average across booked loads. Lower is better for margin.</p>
+          <p className="text-xs text-slate-400">
+            Average across booked loads. Lower is better for margin.
+          </p>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

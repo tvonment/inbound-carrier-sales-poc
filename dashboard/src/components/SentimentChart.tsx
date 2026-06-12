@@ -1,5 +1,7 @@
+import { faFaceSmile, faInbox } from "@fortawesome/free-solid-svg-icons";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SENTIMENT_COLORS } from "../api";
+import { Card, EmptyState } from "./Card";
 
 const ORDER = ["positive", "neutral", "negative"];
 
@@ -12,10 +14,9 @@ export function SentimentChart({ distribution }: { distribution: Record<string, 
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className="card chart-card">
-      <h2>Carrier sentiment</h2>
+    <Card title="Carrier sentiment" icon={faFaceSmile} className="min-h-[290px]">
       {total === 0 ? (
-        <p className="empty">No calls yet</p>
+        <EmptyState icon={faInbox}>No calls yet</EmptyState>
       ) : (
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -30,6 +31,6 @@ export function SentimentChart({ distribution }: { distribution: Record<string, 
           </BarChart>
         </ResponsiveContainer>
       )}
-    </div>
+    </Card>
   );
 }

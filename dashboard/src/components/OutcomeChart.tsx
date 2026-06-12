@@ -1,5 +1,7 @@
+import { faChartPie, faInbox } from "@fortawesome/free-solid-svg-icons";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { OUTCOME_COLORS, OUTCOME_LABELS } from "../api";
+import { Card, EmptyState } from "./Card";
 
 export function OutcomeChart({ distribution }: { distribution: Record<string, number> }) {
   const data = Object.entries(distribution).map(([key, count]) => ({
@@ -9,10 +11,9 @@ export function OutcomeChart({ distribution }: { distribution: Record<string, nu
   }));
 
   return (
-    <div className="card chart-card">
-      <h2>Call outcomes</h2>
+    <Card title="Call outcomes" icon={faChartPie} className="min-h-[290px]">
       {data.length === 0 ? (
-        <p className="empty">No calls yet</p>
+        <EmptyState icon={faInbox}>No calls yet</EmptyState>
       ) : (
         <ResponsiveContainer width="100%" height={240}>
           <PieChart>
@@ -26,6 +27,6 @@ export function OutcomeChart({ distribution }: { distribution: Record<string, nu
           </PieChart>
         </ResponsiveContainer>
       )}
-    </div>
+    </Card>
   );
 }
