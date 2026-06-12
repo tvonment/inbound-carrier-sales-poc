@@ -93,14 +93,31 @@ Security is layered, so no single mistake exposes your data:
   the browser.
 - **Secrets stay in Azure's vaulted store** — generated at deployment,
   never in code, never in the repository.
-- **The database accepts Azure-internal connections only**, TLS required.
+- **The database has no public address at all.** It lives behind a private
+  endpoint inside our own virtual network: the application reaches it over
+  Azure's internal backbone, and from the public internet there is nothing
+  to connect to, let alone attack.
 
-For a production rollout we would add, in order of value: private
-networking (VNet isolation of the database and application on a higher
-gateway tier), Azure Key Vault as the single secret authority, per-consumer
-rate limiting at the gateway, custom domains, and audit logging of every
-administrative action. None of these change the architecture — they're
-configuration, not surgery.
+For a production rollout we would add, in order of value: Azure Key Vault
+as the single secret authority, per-consumer rate limiting at the gateway,
+custom domains, and audit logging of every administrative action. None of
+these change the architecture — they're configuration, not surgery.
+
+### Where your data lives
+
+The platform runs in a US Azure region — deliberately. Acme is a US
+brokerage, your carriers are FMCSA-registered, and the federal registry
+only answers queries from inside the United States. The data sits next to
+the customer and the regulator.
+
+The same blueprint answers the opposite question too. For a European
+brokerage we would deploy the identical stack to a Swiss or EU region, so
+every call, transcript, and rate stays under European jurisdiction — and
+route only the FMCSA eligibility check through a single relay container in
+a peered US network. The only thing that would ever cross the Atlantic is a
+carrier registration number. Because the whole environment is defined as
+code, the region is a deployment parameter, not an architecture decision —
+this proof of concept itself has already run from both continents.
 
 ## What this is, and what it isn't (yet)
 

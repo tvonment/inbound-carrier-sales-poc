@@ -77,6 +77,62 @@ resource acrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   }
 }
 
+// --- Network (database isolation) ---
+// The database gets no public address: the API reaches it over a private
+// endpoint inside this VNet. The only public surfaces are the APIM gateway
+// and the ACA ingress, which Easy Auth restricts to APIM's identity.
+
+resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
+  name: 'vnet-${resourceToken}'
+  location: location
+  tags: tags
+  properties: {
+    addressSpace: { addressPrefixes: ['10.0.0.0/16'] }
+    subnets: [
+      {
+        // Container Apps environment subnet; workload-profile environments
+        // require the Microsoft.App/environments delegation.
+        name: 'aca-infra'
+        properties: {
+          addressPrefix: '10.0.0.0/24'
+          delegations: [
+            {
+              name: 'aca'
+              properties: { serviceName: 'Microsoft.App/environments' }
+            }
+          ]
+        }
+      }
+      {
+        name: 'private-endpoints'
+        properties: { addressPrefix: '10.0.1.0/24' }
+      }
+    ]
+  }
+}
+
+var acaInfraSubnetId = '${vnet.id}/subnets/aca-infra'
+var privateEndpointSubnetId = '${vnet.id}/subnets/private-endpoints'
+
+// Resolves the server's public FQDN to its private IP for apps in the VNet,
+// so DATABASE_URL needs no change.
+resource pgPrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.postgres.database.azure.com'
+  location: 'global'
+  tags: tags
+}
+
+resource pgPrivateDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: pgPrivateDnsZone
+  name: 'link-${resourceToken}'
+  location: 'global'
+  tags: tags
+  properties: {
+    virtualNetwork: { id: vnet.id }
+    registrationEnabled: false
+  }
+}
+
 // --- PostgreSQL Flexible Server (B1ms) ---
 
 resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
@@ -97,6 +153,10 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
       geoRedundantBackup: 'Disabled'
     }
     highAvailability: { mode: 'Disabled' }
+    network: {
+      // Reachable only through the private endpoint below.
+      publicNetworkAccess: 'Disabled'
+    }
   }
 }
 
@@ -105,13 +165,34 @@ resource database 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-0
   name: dbName
 }
 
-// PoC simplification: public network access limited to Azure services.
-resource pgFirewall 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
-  parent: postgres
-  name: 'AllowAllAzureServicesAndResources'
+resource pgPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01' = {
+  name: 'pe-psql-${resourceToken}'
+  location: location
+  tags: tags
   properties: {
-    startIpAddress: '0.0.0.0'
-    endIpAddress: '0.0.0.0'
+    subnet: { id: privateEndpointSubnetId }
+    privateLinkServiceConnections: [
+      {
+        name: 'psql'
+        properties: {
+          privateLinkServiceId: postgres.id
+          groupIds: ['postgresqlServer']
+        }
+      }
+    ]
+  }
+}
+
+resource pgPrivateEndpointDns 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
+  parent: pgPrivateEndpoint
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'postgres'
+        properties: { privateDnsZoneId: pgPrivateDnsZone.id }
+      }
+    ]
   }
 }
 
@@ -131,6 +212,16 @@ resource containerEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
         sharedKey: logAnalytics.listKeys().primarySharedKey
       }
     }
+    vnetConfiguration: {
+      infrastructureSubnetId: acaInfraSubnetId
+      // Ingress stays external: APIM Consumption cannot join a VNet, so it
+      // reaches the apps over their public ingress, which Easy Auth locks
+      // to APIM's identity.
+      internal: false
+    }
+    workloadProfiles: [
+      { name: 'Consumption', workloadProfileType: 'Consumption' }
+    ]
   }
 }
 
@@ -147,6 +238,7 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
   dependsOn: [acrPull]
   properties: {
     managedEnvironmentId: containerEnv.id
+    workloadProfileName: 'Consumption'
     configuration: {
       ingress: {
         external: true
@@ -251,6 +343,7 @@ resource dashboardApp 'Microsoft.App/containerApps@2024-03-01' = {
   dependsOn: [acrPull]
   properties: {
     managedEnvironmentId: containerEnv.id
+    workloadProfileName: 'Consumption'
     configuration: {
       ingress: {
         external: true
@@ -373,10 +466,15 @@ var apimOperations = [
   { name: 'metrics', method: 'GET', urlTemplate: '/api/metrics' }
 ]
 
+// APIM's management plane rejects concurrent child writes (ETag/
+// PreconditionFailed), so operations are created one at a time and the
+// subscription waits for them.
+@batchSize(1)
 resource apimOps 'Microsoft.ApiManagement/service/apis/operations@2023-05-01-preview' = [
   for op in apimOperations: {
     parent: apimApi
     name: op.name
+    dependsOn: [apimApiPolicy]
     properties: {
       displayName: op.name
       method: op.method
@@ -388,6 +486,7 @@ resource apimOps 'Microsoft.ApiManagement/service/apis/operations@2023-05-01-pre
 resource apimSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-05-01-preview' = {
   parent: apim
   name: 'happyrobot'
+  dependsOn: [apimOps]
   properties: {
     displayName: 'HappyRobot platform'
     scope: '/apis/${apimApi.id}'
