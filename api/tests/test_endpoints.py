@@ -25,6 +25,12 @@ def test_endpoints_reject_wrong_key(client):
     assert resp.status_code == 401
 
 
+def test_docs_need_key_unless_exposed(anon_client):
+    # EXPOSE_DOCS is unset in tests, matching the deployed configuration.
+    assert anon_client.get("/docs").status_code == 401
+    assert anon_client.get("/openapi.json").status_code == 401
+
+
 # --- verify-mc ---
 
 def test_verify_mc_eligible(client):
@@ -189,3 +195,6 @@ def test_metrics(client):
     assert body["sentiment_distribution"] == {"positive": 1}
     assert body["avg_rate_delta"] == 2300 - 2150
     assert len(body["recent_calls"]) == 2
+    # The dashboard is publicly viewable; transcripts must not leak into it.
+    assert "transcript" not in body["recent_calls"][0]
+    assert "extracted" not in body["recent_calls"][0]

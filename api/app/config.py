@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     api_key: str = "dev-secret-key"
     database_url: str = "sqlite:///./local.db"
 
+    # Swagger/redoc reachable without a key. Off by default; enable locally.
+    expose_docs: bool = False
+
     # FMCSA QCMobile API. Mock mode is the default so the demo never depends
     # on an external service being up.
     mock_fmcsa: bool = True

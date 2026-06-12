@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import Call
-from app.schemas import CallOut, MetricsOut, Outcome
+from app.schemas import CallSummary, MetricsOut, Outcome
 
 router = APIRouter()
 
@@ -57,5 +57,5 @@ def metrics(db: Session = Depends(get_db)):
         avg_loadboard_rate=round(avg_board, 2) if avg_board is not None else None,
         avg_rate_delta=round(avg_delta, 2) if avg_delta is not None else None,
         avg_rate_delta_pct=round(avg_delta_pct, 2) if avg_delta_pct is not None else None,
-        recent_calls=[CallOut.model_validate(c) for c in recent],
+        recent_calls=[CallSummary.model_validate(c) for c in recent],
     )

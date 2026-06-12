@@ -109,12 +109,28 @@ class CallIn(BaseModel):
     extracted: dict | None = None
 
 
-class CallOut(CallIn):
+class CallSummary(BaseModel):
+    """Call row without transcript/extracted — what the dashboard needs.
+    The dashboard is publicly viewable, so transcripts stay out of it."""
+
     id: int
     created_at: datetime
+    outcome: Outcome
+    mc_number: str | None = None
+    carrier_name: str | None = None
+    load_id: str | None = None
+    sentiment: Sentiment | None = None
+    negotiation_rounds: int | None = None
+    initial_offer: float | None = None
+    final_rate: float | None = None
     loadboard_rate: float | None = None
 
     model_config = {"from_attributes": True}
+
+
+class CallOut(CallSummary):
+    transcript: str | None = None
+    extracted: dict | None = None
 
 
 # --- metrics ---
@@ -130,4 +146,4 @@ class MetricsOut(BaseModel):
     avg_loadboard_rate: float | None
     avg_rate_delta: float | None
     avg_rate_delta_pct: float | None
-    recent_calls: list[CallOut]
+    recent_calls: list[CallSummary]
