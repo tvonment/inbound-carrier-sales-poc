@@ -3,13 +3,19 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Server-side proxy to the API: the subscription/API key is injected
-    # here so it never ships to the browser.
-    location /api/ {
-        proxy_pass ${API_URL};
+    # The dashboard only needs the metrics read. Nothing else is proxied,
+    # so the public dashboard URL is not a side door into the API.
+    # In Azure API_URL is the APIM gateway base (…/carrier-api) and API_KEY
+    # is an APIM subscription key; locally they can point straight at the
+    # FastAPI app with its X-API-Key. Keys are injected here server-side
+    # and never ship to the browser.
+    location = /api/metrics {
+        limit_except GET { deny all; }
+        proxy_pass ${API_URL}/api/metrics;
+        proxy_set_header Ocp-Apim-Subscription-Key "${API_KEY}";
         proxy_set_header X-API-Key "${API_KEY}";
         proxy_set_header Host $proxy_host;
-        # Upstream may be an https:// Container Apps FQDN
+        # Upstream is an https:// host in Azure
         proxy_ssl_server_name on;
     }
 

@@ -3,6 +3,13 @@ name: hr-carrier-sales
 metadata:
   template: hr-carrier-sales@0.1.0
 
+hooks:
+  # Creates the Entra app registration the API's Easy Auth validates against
+  # and exports API_APP_CLIENT_ID into the azd environment for Bicep.
+  preprovision:
+    shell: sh
+    run: ./infra/scripts/ensure-app-registration.sh
+
 services:
   api:
     project: ./api

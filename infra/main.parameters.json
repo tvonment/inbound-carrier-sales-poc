@@ -16,6 +16,9 @@
     },
     "fmcsaWebkey": {
       "value": "${FMCSA_WEBKEY=}"
+    },
+    "apiAppClientId": {
+      "value": "${API_APP_CLIENT_ID=}"
     }
   }
 }

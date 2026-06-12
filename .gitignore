@@ -27,3 +27,6 @@ dist/
 
 # Build artifacts
 *.tsbuildinfo
+
+# MCP bundle (installed into Claude, not part of the project)
+*.mcpb

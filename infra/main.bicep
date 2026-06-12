@@ -20,6 +20,9 @@ param apiKey string
 @description('FMCSA QCMobile webkey; leave empty to run with MOCK_FMCSA=true')
 param fmcsaWebkey string = ''
 
+@description('Client id of the Entra app registration representing the API (set by the preprovision hook); empty disables Easy Auth')
+param apiAppClientId string = ''
+
 @description('Publisher email required by API Management')
 param publisherEmail string = 'thvome@gmail.com'
 
@@ -39,6 +42,7 @@ module resources 'resources.bicep' = {
     apiKey: apiKey
     fmcsaWebkey: fmcsaWebkey
     publisherEmail: publisherEmail
+    apiAppClientId: apiAppClientId
   }
 }
 

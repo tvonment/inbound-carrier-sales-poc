@@ -23,9 +23,10 @@ concept for Acme Logistics — it's live end to end.
   sentiment breakdowns, and agreed-vs-listed rate — the margin view.
 
 **Under the hood:** FastAPI + PostgreSQL on Azure Container Apps, fronted by
-Azure API Management (HTTPS, key auth, rate limiting), fully containerized,
-and reproducible with a single `azd up`. Every push to main redeploys via
-GitHub Actions.
+Azure API Management — HTTPS and key auth at the gateway, and the backend
+itself only accepts the gateway's Microsoft Entra ID identity (zero shared
+secrets behind the front door). Fully containerized and reproducible with a
+single `azd up`.
 
 **Links**
 

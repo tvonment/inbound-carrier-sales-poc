@@ -14,10 +14,10 @@ Carrier (browser, web call)
 HappyRobot platform ── voice agent + tools ── post-call extract/classify
         │  webhooks (HTTPS + subscription key)
         ▼
-Azure API Management (Consumption)        ← key auth, rate limiting
-        │
+Azure API Management (Consumption)        ← subscription-key auth
+        │  Entra ID token (managed identity)
         ▼
-Azure Container Apps
+Azure Container Apps                      ← Easy Auth: only APIM gets in
   ├─ api        FastAPI (Python 3.12)     ← verify-mc, loads/search,
   │                                          evaluate-offer, book, calls, metrics
   └─ dashboard  React + nginx             ← live metrics, polls /api/metrics
@@ -26,10 +26,15 @@ Azure Container Apps
 Azure Database for PostgreSQL Flexible Server (B1ms)
 ```
 
-- **APIM Consumption** fronts everything with subscription-key auth (the
-  Consumption sku has no rate-limit policy support); the FastAPI app
-  additionally validates its own `X-API-Key` header (defense in depth — the
-  Container App FQDN is also reachable directly).
+- **APIM Consumption** fronts everything with subscription-key auth, and
+  authenticates *itself* to the backend with an **Entra ID token from its
+  managed identity** — no shared secret between gateway and API.
+- **Easy Auth on the API container app** rejects any request without a valid
+  token issued to APIM's identity *at the platform layer*, before traffic
+  reaches the container. The Container App FQDN stays publicly routable
+  (Consumption APIM supports no VNet), but it is not a side door: only
+  `/healthz` answers without a token. The FastAPI app still validates its
+  own `X-API-Key` header (injected by APIM policy) as defense in depth.
 - **Negotiation is backend logic**, not prompt logic: `/api/evaluate-offer`
   accepts an offer up to `loadboard_rate × (1 + threshold)` with thresholds
   shrinking per round (12% / 8% / 4%, configurable via
@@ -38,8 +43,9 @@ Azure Database for PostgreSQL Flexible Server (B1ms)
   `MOCK_FMCSA=true` (default) uses a deterministic mock so demos never depend
   on an external service (MC numbers ending in `999` → not authorized, `000`
   → inactive, anything else eligible).
-- The dashboard's nginx proxies `/api/*` to the API and injects the API key
-  **server-side** — the key never ships to the browser.
+- The dashboard's nginx proxies **only `GET /api/metrics`** to the API and
+  injects the API key **server-side** — the key never ships to the browser,
+  and the public dashboard URL is not a side door into the other endpoints.
 
 ## Repo layout
 
@@ -58,8 +64,8 @@ API (SQLite by default, seeds 24 demo loads on first start):
 ```bash
 cd api
 uv sync
-uv run uvicorn app.main:app --reload          # http://localhost:8000/docs
-uv run pytest                                  # 29 tests
+EXPOSE_DOCS=true uv run uvicorn app.main:app --reload   # http://localhost:8000/docs
+uv run pytest                                            # 30 tests
 ```
 
 Dashboard (proxies to the API on :8000):
@@ -70,8 +76,9 @@ npm install
 npm run dev                                    # http://localhost:5173
 ```
 
-All API endpoints except `/healthz` require `X-API-Key: dev-secret-key`
-(configurable via `API_KEY`; see `api/.env.example`).
+All endpoints except `/healthz` require `X-API-Key: dev-secret-key`
+(configurable via `API_KEY`; see `api/.env.example`). That includes the
+interactive docs unless `EXPOSE_DOCS=true` is set — it never is in Azure.
 
 Or with Docker:
 
@@ -92,13 +99,17 @@ azd auth login
 azd up        # provisions everything + builds/pushes/deploys both containers
 ```
 
-`azd up` creates the resource group, Container Apps environment, ACR,
-PostgreSQL Flexible Server, and APIM, generates the database password and API
-key as azd secrets, and prints:
+`azd up` first runs a preprovision hook that creates the Entra **app
+registration** Easy Auth validates against (idempotent; requires `az login`
+with permission to create app registrations) — then creates the resource
+group, Container Apps environment, ACR, PostgreSQL Flexible Server, and
+APIM, generates the database password and API key as azd secrets, and
+prints:
 
 - `DASHBOARD_URL` — the public dashboard
 - `APIM_GATEWAY_URL` — base URL for the HappyRobot webhooks
-- `API_BASE_URL` — direct API FQDN (still key-protected)
+- `API_BASE_URL` — direct API FQDN (Easy Auth: rejects everything but
+  `/healthz` without an Entra token)
 
 Get the APIM subscription key for the platform webhooks:
 
@@ -115,14 +126,12 @@ revision or run `python -m app.seed.seeder` against `DATABASE_URL`.
 When the FMCSA webkey arrives: `azd env set FMCSA_WEBKEY <key> && azd up`
 (this also flips `MOCK_FMCSA` to `false`).
 
-### CI/CD
+### CI/CD (deliberately not set up)
 
-```bash
-azd pipeline config
-```
-
-Generates a GitHub Actions workflow with OIDC federated credentials (no
-secrets in the repo); every push to `main` redeploys.
+Deploys are plain `azd up` / `azd deploy` — reproducible from a clean clone
+with no pipeline dependency. If push-to-main deploys are ever wanted,
+`azd pipeline config` generates a GitHub Actions workflow with OIDC
+federated credentials (no secrets in the repo) in one command.
 
 ## HappyRobot platform setup
 
@@ -133,10 +142,46 @@ secrets in the repo); every push to `main` redeploys.
 4. Add the post-call nodes per `platform/extract_schema.md`, ending in a
    webhook `POST /api/calls` that fires on every call end.
 
+### Post-deploy smoke tests
+
+A read-only smoke suite runs against the deployed environment (skipped
+locally unless configured):
+
+```bash
+cd api
+SMOKE_GATEWAY_URL=$(azd env get-value APIM_GATEWAY_URL) \
+SMOKE_API_BASE_URL=$(azd env get-value API_BASE_URL) \
+SMOKE_SUBSCRIPTION_KEY=<apim subscription key> \
+uv run pytest tests/test_smoke_deployed.py -v
+```
+
+It checks the happy paths through the gateway *and* that the side doors are
+shut: no subscription key → 401, direct container access without an Entra
+token → 401, `/docs` closed.
+
 ## Security
 
-- HTTPS everywhere (Container Apps + APIM managed certs, no cert work).
-- APIM subscription key at the gateway + `X-API-Key` enforced by the app.
-- Secrets (DB connection string, API key, FMCSA webkey) live in Container
-  Apps secrets, generated/stored by azd — never in the repo.
-- Postgres accepts connections from Azure services only; TLS required.
+Layered, outside in:
+
+1. **HTTPS everywhere** (Container Apps + APIM managed certs, no cert work).
+2. **APIM subscription key** for all consumers (HappyRobot webhooks and the
+   dashboard's nginx alike); rotate/revoke per consumer in seconds without
+   redeploying.
+3. **Gateway→backend auth via managed identity**: APIM acquires an Entra ID
+   token with a user-assigned identity; **Easy Auth** on the API container
+   app rejects any caller without a valid token for that exact identity —
+   enforced by the platform sidecar before the app is reached. No shared
+   secret, nothing to rotate or leak. (Consumption APIM has no VNet support
+   and no static IP, so this is the supported way to shield the backend at
+   this tier — identity instead of network perimeter.)
+4. **App-level `X-API-Key`** (injected by APIM policy) as defense in depth;
+   interactive docs are key-protected unless `EXPOSE_DOCS=true` (never set
+   in Azure).
+5. **Dashboard nginx proxies only `GET /api/metrics`** with the key held
+   server-side; the metrics payload excludes transcripts.
+6. **Secrets** (DB connection string, API key, FMCSA webkey) live in
+   Container Apps secrets, generated/stored by azd — never in the repo.
+7. **Postgres** accepts connections from Azure services only; TLS required.
+
+Production roadmap beyond the PoC: see "Security hardening" in
+`docs/acme-build-description.md`.

@@ -64,14 +64,43 @@ spreadsheet exports.
 ## Where it runs and how it's protected
 
 The solution runs on Microsoft Azure in containers, with your load data in a
-managed PostgreSQL database. Everything is HTTPS. Every API call — including
-the voice platform's — must present a valid API key, enforced at two
-layers (the API gateway and the application itself). Secrets live in
-Azure's secret store, never in code.
+managed PostgreSQL database. The entire environment is defined as code: one
+command (`azd up`) recreates it from scratch — a staging copy for testing
+costs minutes, not days.
 
-The entire environment is defined as code: one command (`azd up`) recreates
-it from scratch, and every change pushed to the code repository deploys
-automatically. That means a staging copy for testing costs minutes, not days.
+### Security hardening
+
+Security is layered, so no single mistake exposes your data:
+
+- **Encrypted everywhere.** Every connection — caller to gateway, gateway to
+  application, application to database — is HTTPS/TLS. There is no
+  unencrypted path.
+- **One front door.** All traffic enters through an API gateway (Azure API
+  Management). Each consumer — the voice platform, the dashboard — has its
+  own access key that can be rotated or revoked in seconds, without
+  touching the application.
+- **No passwords between systems.** Behind the gateway, services prove who
+  they are with **Microsoft Entra ID identities** (the same directory that
+  runs your corporate logins) instead of shared secrets. The application
+  platform itself rejects any caller that isn't the gateway — before a
+  single line of our code runs. There is no key to steal for that hop, and
+  nothing to rotate.
+- **Belt and braces.** The application additionally checks its own API key
+  on every request, so even a misconfigured gateway wouldn't expose data.
+- **The dashboard sees numbers, not conversations.** The public dashboard
+  can read exactly one thing: aggregated metrics. Call transcripts never
+  leave the protected store, and the dashboard's credentials never reach
+  the browser.
+- **Secrets stay in Azure's vaulted store** — generated at deployment,
+  never in code, never in the repository.
+- **The database accepts Azure-internal connections only**, TLS required.
+
+For a production rollout we would add, in order of value: private
+networking (VNet isolation of the database and application on a higher
+gateway tier), Azure Key Vault as the single secret authority, per-consumer
+rate limiting at the gateway, custom domains, and audit logging of every
+administrative action. None of these change the architecture — they're
+configuration, not surgery.
 
 ## What this is, and what it isn't (yet)
 
@@ -86,7 +115,8 @@ those steps require a rebuild — they're integrations, not surgery.
 ## Why this approach
 
 - **Deterministic pricing.** Rate decisions are code you can audit and test —
-  27 of our automated tests cover exactly that logic — not an LLM's mood.
+  half of our 30 automated tests cover exactly that negotiation and booking
+  logic — not an LLM's mood.
 - **Boring, explainable integration.** The voice platform talks to your
   systems through plain webhooks. Any engineer on your team can read,
   debug, and extend them.
