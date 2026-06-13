@@ -8,8 +8,13 @@
 
 ## 1. AI Extract node — offer data
 
-Extract from the full call transcript. All fields nullable; leave null when
-the call never reached that stage.
+Extract from the full call transcript. The platform's AI Extract can't emit
+null, so unknown **string** fields are output as an empty string and unknown
+**numeric** fields as `0` (never the word "null"). The API normalizes on
+ingestion (`api/app/routers/calls.py`): non-positive `final_rate`/`initial_offer`
+become null, and because `negotiation_rounds: 0` is ambiguous (a genuine
+"accepted at list" vs. a call that never reached pricing), rounds are nulled
+for any outcome other than `booked`/`negotiation_failed`.
 
 | Parameter | Type | Extraction instruction |
 |---|---|---|

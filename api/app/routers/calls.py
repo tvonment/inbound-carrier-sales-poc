@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import Call, Carrier, Load
-from app.schemas import CallIn, CallOut
+from app.schemas import CallIn, CallOut, Outcome
 from app.services.fmcsa import normalize_mc
 
 router = APIRouter()
@@ -31,13 +31,20 @@ def record_call(body: CallIn, db: Session = Depends(get_db)):
     final_rate = body.final_rate if (body.final_rate or 0) > 0 else None
     initial_offer = body.initial_offer if (body.initial_offer or 0) > 0 else None
 
+    # Only booked / negotiation_failed calls ever reached pricing. The post-call
+    # extract can't emit null, so other outcomes arrive with negotiation_rounds=0,
+    # which is indistinguishable from a real "accepted at list, 0 rounds". Null
+    # them so the rounds average and the calls table reflect only priced calls.
+    priced = body.outcome in (Outcome.booked, Outcome.negotiation_failed)
+    negotiation_rounds = body.negotiation_rounds if priced else None
+
     call = Call(
         mc_number=mc,
         carrier_name=carrier_name,
         load_id=body.load_id,
         outcome=body.outcome.value,
         sentiment=body.sentiment.value if body.sentiment else None,
-        negotiation_rounds=body.negotiation_rounds,
+        negotiation_rounds=negotiation_rounds,
         initial_offer=initial_offer,
         final_rate=final_rate,
         loadboard_rate=loadboard_rate,

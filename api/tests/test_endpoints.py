@@ -229,3 +229,16 @@ def test_zero_rate_does_not_skew_metrics(client):
     assert body["avg_rate_delta"] == 2300 - 2150
     # Rounds average includes the 0-round accept: avg of {2, 0} == 1.0.
     assert body["avg_negotiation_rounds"] == 1.0
+
+
+def test_non_priced_call_nulls_negotiation_rounds(client):
+    # The extract emits 0 (never null) for unknown numerics, so a call that never
+    # reached pricing arrives with negotiation_rounds=0. Only booked /
+    # negotiation_failed actually negotiate, so the rest are stored as null and
+    # stay out of the average.
+    resp = client.post(
+        "/api/calls",
+        json={"outcome": "carrier_not_eligible", "mc_number": "111999", "negotiation_rounds": 0},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["negotiation_rounds"] is None

@@ -7,10 +7,13 @@
 > (e.g. `https://apim-acme-poc.azure-api.net/carrier-api`) and
 > `{{SUBSCRIPTION_KEY}}` with the APIM subscription key.
 >
-> Headers for EVERY webhook:
+> Headers on the deployed webhooks:
 > - `Ocp-Apim-Subscription-Key: {{SUBSCRIPTION_KEY}}` (APIM gateway auth)
-> - `X-API-Key: {{API_KEY}}` (FastAPI defense-in-depth key)
 > - `Content-Type: application/json`
+>
+> The FastAPI `X-API-Key` is NOT set on the nodes — APIM fronts the API and
+> supplies the backend credentials (managed-identity Easy Auth + the API key),
+> so the workflow only carries the subscription key.
 
 ---
 
