@@ -14,10 +14,12 @@ export function Card({
   children: ReactNode;
 }) {
   return (
-    <section className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}>
+    <section
+      className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 ${className}`}
+    >
       {title && (
-        <h2 className="mb-2.5 flex items-center gap-2 text-sm font-semibold text-slate-600">
-          {icon && <FontAwesomeIcon icon={icon} className="text-slate-400" />}
+        <h2 className="mb-2.5 flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+          {icon && <FontAwesomeIcon icon={icon} className="text-slate-400 dark:text-slate-500" />}
           {title}
         </h2>
       )}
@@ -34,8 +36,8 @@ export function EmptyState({
   children: ReactNode;
 }) {
   return (
-    <p className="flex items-center gap-2 text-sm text-slate-500">
-      <FontAwesomeIcon icon={icon} className="text-slate-400" />
+    <p className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+      <FontAwesomeIcon icon={icon} className="text-slate-400 dark:text-slate-500" />
       {children}
     </p>
   );

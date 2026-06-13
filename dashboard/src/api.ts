@@ -32,14 +32,8 @@ export async function fetchMetrics(): Promise<Metrics> {
   return resp.json();
 }
 
-export const OUTCOME_LABELS: Record<string, string> = {
-  booked: "Booked",
-  negotiation_failed: "Negotiation failed",
-  no_matching_load: "No matching load",
-  carrier_not_eligible: "Not eligible",
-  abandoned: "Abandoned",
-};
-
+// Display labels for outcomes/sentiments live in the i18n bundles
+// (src/i18n/locales/*); only the chart colors stay here.
 export const OUTCOME_COLORS: Record<string, string> = {
   booked: "#16a34a",
   negotiation_failed: "#f59e0b",

@@ -1,0 +1,66 @@
+{
+  "app": {
+    "subtitle": "Inbound Carrier Sales — Live-Zahle",
+    "updated": "Aktualisiert {{time}}",
+    "loading": "D Zahle werded glade…",
+    "waiting": "Wart uf d API…",
+    "error": "API nöd erreichbar"
+  },
+  "kpi": {
+    "totalCalls": "Aaruef total",
+    "loadsBooked": "Buechti Ladige",
+    "conversionRate": "Abschlussquote",
+    "avgRounds": "Ø Verhandligsrunde"
+  },
+  "rate": {
+    "title": "Abgmachte vs. glistete Priis",
+    "empty": "No kei buechti Ladige",
+    "vsLoadboard": "{{value}} ggü. Loadboard",
+    "avgAgreed": "Ø abgmachte Priis",
+    "avgLoadboard": "Ø Loadboard-Priis",
+    "note": "Schnitt über buechti Ladige. Weniger isch besser für d Marge."
+  },
+  "outcomes": {
+    "title": "Aaruef-Resultat",
+    "empty": "No kei Aaruef"
+  },
+  "sentiment": {
+    "title": "Stimmig vo de Fahrer",
+    "empty": "No kei Aaruef"
+  },
+  "table": {
+    "title": "Letschti Aaruef",
+    "empty": "No kei Aaruef — mach en Testaaruef, denn gseesch da d Date.",
+    "col": {
+      "time": "Ziit",
+      "carrier": "Fahrer",
+      "mc": "MC-Nr.",
+      "load": "Ladig",
+      "outcome": "Resultat",
+      "sentiment": "Stimmig",
+      "rounds": "Runde",
+      "finalRate": "Endpriis"
+    }
+  },
+  "outcome": {
+    "booked": "Buecht",
+    "negotiation_failed": "Verhandlig gscheiteret",
+    "no_matching_load": "Kei passendi Ladig",
+    "carrier_not_eligible": "Nöd zuegla",
+    "abandoned": "Abbroche"
+  },
+  "sentimentValue": {
+    "positive": "Positiv",
+    "neutral": "Neutral",
+    "negative": "Negativ"
+  },
+  "controls": {
+    "language": "Sprooch",
+    "theme": {
+      "label": "Design",
+      "system": "System",
+      "light": "Hell",
+      "dark": "Dunkel"
+    }
+  }
+}

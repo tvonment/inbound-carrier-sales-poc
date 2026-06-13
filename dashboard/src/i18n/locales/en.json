@@ -1,0 +1,66 @@
+{
+  "app": {
+    "subtitle": "Inbound Carrier Sales — Live Metrics",
+    "updated": "Updated {{time}}",
+    "loading": "Loading metrics…",
+    "waiting": "Waiting for the API…",
+    "error": "Can't reach the API"
+  },
+  "kpi": {
+    "totalCalls": "Total calls",
+    "loadsBooked": "Loads booked",
+    "conversionRate": "Conversion rate",
+    "avgRounds": "Avg negotiation rounds"
+  },
+  "rate": {
+    "title": "Agreed vs listed rate",
+    "empty": "No booked loads yet",
+    "vsLoadboard": "{{value}} vs loadboard",
+    "avgAgreed": "Avg agreed rate",
+    "avgLoadboard": "Avg loadboard rate",
+    "note": "Average across booked loads. Lower is better for margin."
+  },
+  "outcomes": {
+    "title": "Call outcomes",
+    "empty": "No calls yet"
+  },
+  "sentiment": {
+    "title": "Carrier sentiment",
+    "empty": "No calls yet"
+  },
+  "table": {
+    "title": "Recent calls",
+    "empty": "No calls yet — make a test call to see data here.",
+    "col": {
+      "time": "Time",
+      "carrier": "Carrier",
+      "mc": "MC #",
+      "load": "Load",
+      "outcome": "Outcome",
+      "sentiment": "Sentiment",
+      "rounds": "Rounds",
+      "finalRate": "Final rate"
+    }
+  },
+  "outcome": {
+    "booked": "Booked",
+    "negotiation_failed": "Negotiation failed",
+    "no_matching_load": "No matching load",
+    "carrier_not_eligible": "Not eligible",
+    "abandoned": "Abandoned"
+  },
+  "sentimentValue": {
+    "positive": "Positive",
+    "neutral": "Neutral",
+    "negative": "Negative"
+  },
+  "controls": {
+    "language": "Language",
+    "theme": {
+      "label": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    }
+  }
+}

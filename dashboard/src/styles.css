@@ -1,1 +1,5 @@
 @import "tailwindcss";
+
+/* Class-based dark mode (toggled by `.dark` on <html>) instead of the
+   media-query default, so the theme can be switched manually and persisted. */
+@custom-variant dark (&:where(.dark, .dark *));

@@ -26,13 +26,21 @@ def metrics(db: Session = Depends(get_db)):
         or 0
     )
 
-    avg_rounds = db.scalar(select(func.avg(Call.negotiation_rounds)))
+    # Average rounds across calls that reached pricing (including 0-round
+    # instant-accepts of the listed rate). Calls that never got to a rate have
+    # null rounds and are excluded.
+    avg_rounds = db.scalar(
+        select(func.avg(Call.negotiation_rounds)).where(
+            Call.negotiation_rounds.is_not(None)
+        )
+    )
 
     # Margin story: average agreed rate vs loadboard rate on booked calls.
+    # `> 0` also guards against any stray 0 rate corrupting the average.
     booked_rates = select(Call.final_rate, Call.loadboard_rate).where(
         Call.outcome == Outcome.booked.value,
-        Call.final_rate.is_not(None),
-        Call.loadboard_rate.is_not(None),
+        Call.final_rate > 0,
+        Call.loadboard_rate > 0,
     )
     pairs = db.execute(booked_rates).all()
     avg_final = avg_board = avg_delta = avg_delta_pct = None

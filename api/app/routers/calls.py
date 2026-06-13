@@ -26,6 +26,11 @@ def record_call(body: CallIn, db: Session = Depends(get_db)):
         carrier = db.get(Carrier, mc)
         carrier_name = carrier.carrier_name if carrier else None
 
+    # A rate of 0 or less means no rate was actually discussed; store null so it
+    # never renders as "$0" and never skews the agreed-vs-loadboard average.
+    final_rate = body.final_rate if (body.final_rate or 0) > 0 else None
+    initial_offer = body.initial_offer if (body.initial_offer or 0) > 0 else None
+
     call = Call(
         mc_number=mc,
         carrier_name=carrier_name,
@@ -33,8 +38,8 @@ def record_call(body: CallIn, db: Session = Depends(get_db)):
         outcome=body.outcome.value,
         sentiment=body.sentiment.value if body.sentiment else None,
         negotiation_rounds=body.negotiation_rounds,
-        initial_offer=body.initial_offer,
-        final_rate=body.final_rate,
+        initial_offer=initial_offer,
+        final_rate=final_rate,
         loadboard_rate=loadboard_rate,
         transcript=body.transcript,
         extracted=body.extracted,

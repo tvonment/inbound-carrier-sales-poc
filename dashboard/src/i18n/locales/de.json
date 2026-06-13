@@ -1,0 +1,66 @@
+{
+  "app": {
+    "subtitle": "Inbound Carrier Sales — Live-Kennzahlen",
+    "updated": "Aktualisiert {{time}}",
+    "loading": "Kennzahlen werden geladen…",
+    "waiting": "Warte auf die API…",
+    "error": "API nicht erreichbar"
+  },
+  "kpi": {
+    "totalCalls": "Anrufe gesamt",
+    "loadsBooked": "Gebuchte Ladungen",
+    "conversionRate": "Abschlussquote",
+    "avgRounds": "Ø Verhandlungsrunden"
+  },
+  "rate": {
+    "title": "Vereinbarter vs. gelisteter Preis",
+    "empty": "Noch keine gebuchten Ladungen",
+    "vsLoadboard": "{{value}} ggü. Loadboard",
+    "avgAgreed": "Ø vereinbarter Preis",
+    "avgLoadboard": "Ø Loadboard-Preis",
+    "note": "Durchschnitt über gebuchte Ladungen. Niedriger ist besser für die Marge."
+  },
+  "outcomes": {
+    "title": "Anruf-Ergebnisse",
+    "empty": "Noch keine Anrufe"
+  },
+  "sentiment": {
+    "title": "Stimmung der Fahrer",
+    "empty": "Noch keine Anrufe"
+  },
+  "table": {
+    "title": "Letzte Anrufe",
+    "empty": "Noch keine Anrufe — mach einen Testanruf, um hier Daten zu sehen.",
+    "col": {
+      "time": "Zeit",
+      "carrier": "Frachtführer",
+      "mc": "MC-Nr.",
+      "load": "Ladung",
+      "outcome": "Ergebnis",
+      "sentiment": "Stimmung",
+      "rounds": "Runden",
+      "finalRate": "Endpreis"
+    }
+  },
+  "outcome": {
+    "booked": "Gebucht",
+    "negotiation_failed": "Verhandlung gescheitert",
+    "no_matching_load": "Keine passende Ladung",
+    "carrier_not_eligible": "Nicht zugelassen",
+    "abandoned": "Abgebrochen"
+  },
+  "sentimentValue": {
+    "positive": "Positiv",
+    "neutral": "Neutral",
+    "negative": "Negativ"
+  },
+  "controls": {
+    "language": "Sprache",
+    "theme": {
+      "label": "Design",
+      "system": "System",
+      "light": "Hell",
+      "dark": "Dunkel"
+    }
+  }
+}

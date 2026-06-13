@@ -198,3 +198,34 @@ def test_metrics(client):
     # The dashboard is publicly viewable; transcripts must not leak into it.
     assert "transcript" not in body["recent_calls"][0]
     assert "extracted" not in body["recent_calls"][0]
+
+
+def test_zero_rate_call_is_stored_as_null(client):
+    resp = client.post(
+        "/api/calls",
+        json={
+            "outcome": "booked",
+            "mc_number": "MC-123456",
+            "load_id": "L-1001",
+            "negotiation_rounds": 0,
+            "initial_offer": 0,
+            "final_rate": 0,
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    # 0 means no rate was actually agreed → persisted as null, not 0.
+    assert body["final_rate"] is None
+    assert body["initial_offer"] is None
+    # A genuine 0-round accept is a real value and is kept.
+    assert body["negotiation_rounds"] == 0
+
+
+def test_zero_rate_does_not_skew_metrics(client):
+    body = client.get("/api/metrics").json()
+    # The $0 booked call from the previous test is excluded from the margin,
+    # so the only booked rate that counts is still 2300 vs loadboard 2150.
+    assert body["avg_final_rate"] == 2300
+    assert body["avg_rate_delta"] == 2300 - 2150
+    # Rounds average includes the 0-round accept: avg of {2, 0} == 1.0.
+    assert body["avg_negotiation_rounds"] == 1.0
