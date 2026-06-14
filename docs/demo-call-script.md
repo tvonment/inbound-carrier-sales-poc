@@ -24,7 +24,7 @@
 
 ## Call 1 — happy path (verify → pitch → 2-round negotiation → book)
 
-**Alex:** "Acme Logistics, this is Alex. Are you calling about a load?"
+**Alex:** "Acme Logistics, this is Alex — are you calling about a load today?"
 
 1. **You:** "Hi, yeah — looking for a load. MC number is **one three three six five five**."
    - *Expect:* Alex repeats the number back, then greets you as **Schneider National Carriers** — that's the live FMCSA lookup.
@@ -77,5 +77,14 @@ positive/neutral sentiment, $2,320.
   POST /api/calls node shows the API's response.
 - Alex stalls on a tool call → the webhook node's output in the run view
   has the HTTP error.
-- One pre-existing row (abandoned/neutral, no MC) is the wiring test from
-  setup — ignore it or wipe the calls table before recording.
+- Before recording: re-seed loads so **L-1001** is fresh and bookable (the
+  script's numbers assume it). This re-dates and un-books the seed loads
+  without touching call history, so your seeded dashboard rows stay as the
+  backdrop:
+
+  ```
+  script -q /dev/null az containerapp exec -n ca-api-zuc4a52a3cnry -g rg-happyrobot-cus \
+    --command "python -m app.seed.seeder"
+  ```
+
+  (Resource names are for the current `happyrobot-cus` env.)

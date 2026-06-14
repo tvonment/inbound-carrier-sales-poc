@@ -116,8 +116,7 @@ every call, transcript, and rate stays under European jurisdiction — and
 route only the FMCSA eligibility check through a single relay container in
 a peered US network. The only thing that would ever cross the Atlantic is a
 carrier registration number. Because the whole environment is defined as
-code, the region is a deployment parameter, not an architecture decision —
-this proof of concept itself has already run from both continents.
+code, the region is a deployment parameter, not an architecture decision.
 
 ## What this is, and what it isn't (yet)
 
@@ -132,7 +131,7 @@ those steps require a rebuild — they're integrations, not surgery.
 ## Why this approach
 
 - **Deterministic pricing.** Rate decisions are code you can audit and test —
-  half of our 30 automated tests cover exactly that negotiation and booking
+  half of our 33 automated tests cover exactly that negotiation and booking
   logic — not an LLM's mood.
 - **Boring, explainable integration.** The voice platform talks to your
   systems through plain webhooks. Any engineer on your team can read,

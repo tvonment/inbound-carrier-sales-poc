@@ -30,3 +30,6 @@ dist/
 
 # MCP bundle (installed into Claude, not part of the project)
 *.mcpb
+
+# Raw video source (commit demo.mp4, not the original recording)
+*.mov

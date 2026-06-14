@@ -5,6 +5,11 @@ FMCSA, pitches matching loads, negotiates price (max 3 rounds), books the
 load, and feeds a live metrics dashboard. Built on the
 [HappyRobot](https://happyrobot.ai) platform for the FDE technical challenge.
 
+## Demo
+
+📹 **[Watch the demo walkthrough](demo.mp4)** — a live carrier call alongside the
+dashboard, then a tour of the Azure architecture.
+
 ## Architecture
 
 ```
@@ -65,7 +70,7 @@ API (SQLite by default, seeds 24 demo loads on first start):
 cd api
 uv sync
 EXPOSE_DOCS=true uv run uvicorn app.main:app --reload   # http://localhost:8000/docs
-uv run pytest                                            # 30 tests
+uv run pytest                                            # 33 tests
 ```
 
 Dashboard (proxies to the API on :8000):
@@ -111,7 +116,8 @@ prints:
 - `API_BASE_URL` — direct API FQDN (Easy Auth: rejects everything but
   `/healthz` without an Entra token)
 
-Get the APIM subscription key for the platform webhooks:
+Get the APIM subscription key for the platform webhooks (replace `<env-name>`
+with your azd environment name — e.g. `happyrobot-cus`, so `-g rg-happyrobot-cus`):
 
 ```bash
 az rest --method post \
@@ -123,7 +129,9 @@ The API seeds its 24 demo loads automatically on first startup (pickup dates
 relative to deploy time). To re-seed later, restart the api container app
 revision or run `python -m app.seed.seeder` against `DATABASE_URL`.
 
-When the FMCSA webkey arrives: `azd env set FMCSA_WEBKEY <key> && azd up`
+The deployed environment has the FMCSA webkey set, so it runs **real** FMCSA
+verification; local runs default to the deterministic mock (`MOCK_FMCSA=true`).
+To wire a key into your own deployment: `azd env set FMCSA_WEBKEY <key> && azd up`
 (this also flips `MOCK_FMCSA` to `false`).
 
 ### CI/CD (deliberately not set up)
@@ -134,6 +142,10 @@ with no pipeline dependency. If push-to-main deploys are ever wanted,
 federated credentials (no secrets in the repo) in one command.
 
 ## HappyRobot platform setup
+
+`azd up` reproduces the Azure half; the agent itself is configured **by hand** on
+the HappyRobot platform (there is no importable workflow artifact) from the
+paste-ready files in `platform/`. The four steps:
 
 1. Create an inbound voice agent on a **web call trigger**.
 2. Paste `platform/agent_prompt.md` as the root prompt.
@@ -181,7 +193,8 @@ Layered, outside in:
    server-side; the metrics payload excludes transcripts.
 6. **Secrets** (DB connection string, API key, FMCSA webkey) live in
    Container Apps secrets, generated/stored by azd — never in the repo.
-7. **Postgres** accepts connections from Azure services only; TLS required.
+7. **Postgres** has no public endpoint — public network access is disabled and
+   it is reachable only via a private endpoint inside the VNet; TLS required.
 
 Production roadmap beyond the PoC: see "Security hardening" in
 `docs/acme-build-description.md`.
