@@ -10,6 +10,8 @@ load, and feeds a live metrics dashboard. Built on the
 📹 **[Watch the demo walkthrough](demo.mp4)** — a live carrier call alongside the
 dashboard, then a tour of the Azure architecture.
 
+https://github.com/user-attachments/assets/9179152b-f99d-4926-8673-146f4fb33a0c
+
 ## Architecture
 
 ```
