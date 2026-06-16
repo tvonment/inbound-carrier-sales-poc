@@ -194,6 +194,26 @@ def test_metrics(client):
     assert body["outcome_distribution"] == {"booked": 1, "abandoned": 1}
     assert body["sentiment_distribution"] == {"positive": 1}
     assert body["avg_rate_delta"] == 2300 - 2150
+    # Cumulative money: one booked call at 2300 vs list 2150.
+    assert body["total_booked_revenue"] == 2300
+    assert body["total_margin_saved"] == 2150 - 2300
+    # Both calls landed today → a single daily bucket: 2 total, 1 booked.
+    assert len(body["daily_calls"]) == 1
+    assert body["daily_calls"][0]["total"] == 2
+    assert body["daily_calls"][0]["booked"] == 1
+    # Only the booked call had a load (L-1001 = Chicago -> Dallas); the
+    # abandoned call has no load_id and never reaches the lane view.
+    assert body["lanes"] == [
+        {
+            "origin": "Chicago, IL",
+            "destination": "Dallas, TX",
+            "mc_number": "123456",
+            "carrier_name": "Sunrise Freight LLC",
+            "calls": 1,
+            "booked": 1,
+            "revenue": 2300,
+        }
+    ]
     assert len(body["recent_calls"]) == 2
     # The dashboard is publicly viewable; transcripts must not leak into it.
     assert "transcript" not in body["recent_calls"][0]
@@ -242,3 +262,68 @@ def test_non_priced_call_nulls_negotiation_rounds(client):
     )
     assert resp.status_code == 201
     assert resp.json()["negotiation_rounds"] is None
+
+
+def test_carrier_breakdown(client):
+    # Two booked loads for one carrier (L-1001 board 2150, L-1002 board 1900) and
+    # a non-booked call for another, with unmistakable MC numbers.
+    for load_id, rate, rounds in [("L-1001", 2000, 2), ("L-1002", 1800, 1)]:
+        client.post(
+            "/api/calls",
+            json={
+                "outcome": "booked",
+                "mc_number": "MC-700001",
+                "carrier_name": "Acme Haulers",
+                "load_id": load_id,
+                "negotiation_rounds": rounds,
+                "final_rate": rate,
+            },
+        )
+    client.post(
+        "/api/calls",
+        json={"outcome": "no_matching_load", "mc_number": "MC-700002", "carrier_name": "Bravo Freight"},
+    )
+
+    by_mc = {c["mc_number"]: c for c in client.get("/api/metrics").json()["carriers"]}
+    acme = by_mc["700001"]
+    assert acme["carrier_name"] == "Acme Haulers"
+    assert acme["calls"] == 2 and acme["booked"] == 2
+    assert acme["conversion_rate"] == 1.0
+    assert acme["revenue"] == 2000 + 1800
+    # Margin = avg(loadboard - final): (2150-2000 + 1900-1800) / 2 == 125.
+    assert acme["avg_margin"] == 125
+    assert acme["avg_rounds"] == 1.5
+
+    bravo = by_mc["700002"]
+    assert bravo["calls"] == 1 and bravo["booked"] == 0
+    assert bravo["conversion_rate"] == 0.0
+    assert bravo["avg_margin"] is None and bravo["revenue"] is None
+
+
+def test_days_filter_scopes_window(client):
+    # Insert a call dated well outside any preset window, straight to the DB.
+    from datetime import timedelta
+
+    from app.db import SessionLocal
+    from app.models import Call, utcnow
+
+    with SessionLocal() as s:
+        old = Call(
+            outcome="booked",
+            mc_number="999000",
+            created_at=utcnow() - timedelta(days=40),
+        )
+        s.add(old)
+        s.commit()
+
+    unscoped = client.get("/api/metrics").json()
+    scoped = client.get("/api/metrics?days=7").json()
+    # Every other call was created during this test run, so the 7-day window
+    # excludes exactly the 40-day-old row.
+    assert unscoped["total_calls"] == scoped["total_calls"] + 1
+    assert sum(d["total"] for d in scoped["daily_calls"]) == scoped["total_calls"]
+
+
+def test_days_filter_rejects_out_of_range(client):
+    assert client.get("/api/metrics?days=0").status_code == 422
+    assert client.get("/api/metrics?days=99999").status_code == 422

@@ -12,6 +12,33 @@ export interface CallRecord {
   loadboard_rate: number | null;
 }
 
+export interface DailyStat {
+  date: string;
+  total: number;
+  booked: number;
+}
+
+export interface LaneStat {
+  origin: string;
+  destination: string;
+  mc_number: string | null;
+  carrier_name: string | null;
+  calls: number;
+  booked: number;
+  revenue: number | null;
+}
+
+export interface CarrierStat {
+  mc_number: string;
+  carrier_name: string | null;
+  calls: number;
+  booked: number;
+  conversion_rate: number;
+  avg_rounds: number | null;
+  avg_margin: number | null;
+  revenue: number | null;
+}
+
 export interface Metrics {
   total_calls: number;
   booked_count: number;
@@ -23,11 +50,18 @@ export interface Metrics {
   avg_loadboard_rate: number | null;
   avg_rate_delta: number | null;
   avg_rate_delta_pct: number | null;
+  total_booked_revenue: number | null;
+  total_margin_saved: number | null;
+  daily_calls: DailyStat[];
+  lanes: LaneStat[];
+  carriers: CarrierStat[];
   recent_calls: CallRecord[];
 }
 
-export async function fetchMetrics(): Promise<Metrics> {
-  const resp = await fetch("/api/metrics");
+/** `days` scopes the dashboard to a recent window; omit it for all of history. */
+export async function fetchMetrics(days?: number): Promise<Metrics> {
+  const url = days ? `/api/metrics?days=${days}` : "/api/metrics";
+  const resp = await fetch(url);
   if (!resp.ok) throw new Error(`API error ${resp.status}`);
   return resp.json();
 }

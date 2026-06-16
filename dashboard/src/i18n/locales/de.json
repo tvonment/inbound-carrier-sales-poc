@@ -54,6 +54,65 @@
     "neutral": "Neutral",
     "negative": "Negativ"
   },
+  "money": {
+    "revenue": "Gebuchter Umsatz gesamt",
+    "revenueHint": "Vereinbarte Preise über alle gebuchten Ladungen",
+    "saved": "Eingesparte Marge ggü. Loadboard",
+    "over": "Marge über Loadboard",
+    "savedHint": "Ggü. Listenpreis — positiv heißt unter Liste gebucht"
+  },
+  "funnel": {
+    "title": "Conversion-Funnel",
+    "empty": "Noch keine Anrufe",
+    "stage": {
+      "handled": "Anrufe bearbeitet",
+      "eligible": "Frachtführer zugelassen",
+      "matched": "Ladung gefunden",
+      "negotiated": "Verhandelt",
+      "booked": "Gebucht"
+    }
+  },
+  "trend": {
+    "title": "Anrufe im Zeitverlauf",
+    "empty": "Noch keine Anrufe",
+    "calls": "Anrufe",
+    "booked": "Gebucht"
+  },
+  "lanes": {
+    "title": "Lane-Aktivität",
+    "empty": "Noch keine zugeordneten Lanes",
+    "topLanes": "Top-Lanes",
+    "legend": "{{calls}} Anrufe · {{booked}} gebucht",
+    "mode": {
+      "all": "Alle Anrufe",
+      "booked": "Gebucht"
+    },
+    "carrier": {
+      "label": "Nach Frachtführer filtern",
+      "all": "Alle Frachtführer"
+    }
+  },
+  "range": {
+    "label": "Zeitraum",
+    "7d": "7T",
+    "30d": "30T",
+    "90d": "90T",
+    "all": "Alle"
+  },
+  "carriers": {
+    "title": "Frachtführer-Übersicht",
+    "empty": "Noch keine Frachtführer-Aktivität",
+    "col": {
+      "carrier": "Frachtführer",
+      "mc": "MC-Nr.",
+      "calls": "Anrufe",
+      "booked": "Gebucht",
+      "conversion": "Abschluss",
+      "rounds": "Ø Runden",
+      "margin": "Marge ggü. Liste",
+      "revenue": "Umsatz"
+    }
+  },
   "controls": {
     "language": "Sprache",
     "theme": {

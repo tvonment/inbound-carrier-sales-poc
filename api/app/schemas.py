@@ -135,6 +135,40 @@ class CallOut(CallSummary):
 
 # --- metrics ---
 
+class DailyStat(BaseModel):
+    """One calendar day of call volume, for the calls-over-time trend."""
+
+    date: str  # ISO date (YYYY-MM-DD)
+    total: int
+    booked: int
+
+
+class LaneStat(BaseModel):
+    """Aggregated activity for one origin -> destination lane, broken out per
+    carrier so the dashboard can filter the map by MC / carrier client-side."""
+
+    origin: str
+    destination: str
+    mc_number: str | None = None
+    carrier_name: str | None = None
+    calls: int
+    booked: int
+    revenue: float | None = None  # sum of agreed rates on booked calls
+
+
+class CarrierStat(BaseModel):
+    """Per-carrier scorecard row: volume, conversion, and negotiation quality."""
+
+    mc_number: str
+    carrier_name: str | None = None
+    calls: int
+    booked: int
+    conversion_rate: float
+    avg_rounds: float | None = None
+    avg_margin: float | None = None  # avg (loadboard - final) on booked; + = below list
+    revenue: float | None = None
+
+
 class MetricsOut(BaseModel):
     total_calls: int
     booked_count: int
@@ -146,4 +180,9 @@ class MetricsOut(BaseModel):
     avg_loadboard_rate: float | None
     avg_rate_delta: float | None
     avg_rate_delta_pct: float | None
+    total_booked_revenue: float | None
+    total_margin_saved: float | None
+    daily_calls: list[DailyStat]
+    lanes: list[LaneStat]
+    carriers: list[CarrierStat]
     recent_calls: list[CallSummary]

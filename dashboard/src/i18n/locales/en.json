@@ -54,6 +54,65 @@
     "neutral": "Neutral",
     "negative": "Negative"
   },
+  "money": {
+    "revenue": "Total booked revenue",
+    "revenueHint": "Agreed rates across all booked loads",
+    "saved": "Margin saved vs loadboard",
+    "over": "Margin over loadboard",
+    "savedHint": "Vs listed rates — positive means booked below list"
+  },
+  "funnel": {
+    "title": "Conversion funnel",
+    "empty": "No calls yet",
+    "stage": {
+      "handled": "Calls handled",
+      "eligible": "Carrier eligible",
+      "matched": "Load matched",
+      "negotiated": "Negotiated",
+      "booked": "Booked"
+    }
+  },
+  "trend": {
+    "title": "Calls over time",
+    "empty": "No calls yet",
+    "calls": "Calls",
+    "booked": "Booked"
+  },
+  "lanes": {
+    "title": "Lane activity",
+    "empty": "No matched lanes yet",
+    "topLanes": "Top lanes",
+    "legend": "{{calls}} calls · {{booked}} booked",
+    "mode": {
+      "all": "All calls",
+      "booked": "Booked"
+    },
+    "carrier": {
+      "label": "Filter by carrier",
+      "all": "All carriers"
+    }
+  },
+  "range": {
+    "label": "Time range",
+    "7d": "7d",
+    "30d": "30d",
+    "90d": "90d",
+    "all": "All"
+  },
+  "carriers": {
+    "title": "Carrier breakdown",
+    "empty": "No carrier activity yet",
+    "col": {
+      "carrier": "Carrier",
+      "mc": "MC #",
+      "calls": "Calls",
+      "booked": "Booked",
+      "conversion": "Conversion",
+      "rounds": "Avg rounds",
+      "margin": "Margin vs list",
+      "revenue": "Revenue"
+    }
+  },
   "controls": {
     "language": "Language",
     "theme": {

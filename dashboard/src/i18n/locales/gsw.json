@@ -54,6 +54,65 @@
     "neutral": "Neutral",
     "negative": "Negativ"
   },
+  "money": {
+    "revenue": "Buechte Umsatz total",
+    "revenueHint": "Abgmachti Priis über alli buechti Ladige",
+    "saved": "Iigsparti Marge ggü. Loadboard",
+    "over": "Marge über Loadboard",
+    "savedHint": "Ggü. Listepriis — positiv heisst under de Lischte buecht"
+  },
+  "funnel": {
+    "title": "Conversion-Funnel",
+    "empty": "No kei Aaruef",
+    "stage": {
+      "handled": "Aaruef bearbeitet",
+      "eligible": "Fahrer zuegla",
+      "matched": "Ladig gfunde",
+      "negotiated": "Verhandlet",
+      "booked": "Buecht"
+    }
+  },
+  "trend": {
+    "title": "Aaruef im Ziitverlauf",
+    "empty": "No kei Aaruef",
+    "calls": "Aaruef",
+    "booked": "Buecht"
+  },
+  "lanes": {
+    "title": "Lane-Aktivität",
+    "empty": "No kei zuegordneti Lanes",
+    "topLanes": "Top-Lanes",
+    "legend": "{{calls}} Aaruef · {{booked}} buecht",
+    "mode": {
+      "all": "Alli Aaruef",
+      "booked": "Buecht"
+    },
+    "carrier": {
+      "label": "Nach Fahrer filtere",
+      "all": "Alli Fahrer"
+    }
+  },
+  "range": {
+    "label": "Ziitruum",
+    "7d": "7T",
+    "30d": "30T",
+    "90d": "90T",
+    "all": "Alli"
+  },
+  "carriers": {
+    "title": "Fahrer-Übersicht",
+    "empty": "No kei Fahrer-Aktivität",
+    "col": {
+      "carrier": "Fahrer",
+      "mc": "MC-Nr.",
+      "calls": "Aaruef",
+      "booked": "Buecht",
+      "conversion": "Abschluss",
+      "rounds": "Ø Runde",
+      "margin": "Marge ggü. Lischte",
+      "revenue": "Umsatz"
+    }
+  },
   "controls": {
     "language": "Sprooch",
     "theme": {

@@ -49,11 +49,22 @@ single call. Your team only gets involved when there's a deal to close.
 
 ## The dashboard
 
-A live web dashboard shows the numbers a desk manager actually asks for:
+A live web dashboard shows the numbers a desk manager actually asks for, with a
+**time-range filter** (7 / 30 / 90 days or all) that re-scopes every metric:
 
+- **Total booked revenue and cumulative margin saved vs. the loadboard** —
+  the bottom-line dollars the automation is moving and saving
 - Call volume, loads booked, and **conversion rate**
-- Outcome breakdown — where calls end and why
-- Carrier sentiment across calls
+- A **conversion funnel** — calls handled → carrier eligible → load matched →
+  negotiated → booked, so you see exactly where calls fall out
+- **Calls over time** — daily volume and bookings, so trends are visible at a glance
+- A **lane map** of where the freight is going, with the top origin→destination
+  lanes ranked by activity and revenue (toggle all calls vs. booked, or filter
+  the map down to a single carrier)
+- A **carrier breakdown** — calls, bookings, conversion, avg negotiation rounds,
+  margin vs. list, and revenue per carrier, so you can see who actually
+  negotiates best
+- Outcome breakdown and carrier sentiment across calls
 - **Average agreed rate vs. listed rate** — what the automation is paying
   above board, i.e. your margin story
 - A table of recent calls with MC, load, outcome, and final rate
